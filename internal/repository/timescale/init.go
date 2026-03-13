@@ -2,8 +2,9 @@ package timescale
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const enableExtension = `CREATE EXTENSION IF NOT EXISTS timescaledb;`
@@ -29,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_gps_points_trip_id
 ON gps_points (trip_id, time DESC);
 `
 
-func InitSchema(ctx context.Context, db *sql.DB) error {
+func InitSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	statements := []string{
 		enableExtension,
 		createGPSPointsTable,
@@ -37,7 +38,7 @@ func InitSchema(ctx context.Context, db *sql.DB) error {
 		createTripTimeIndex,
 	}
 	for _, stmt := range statements {
-		if _, err := db.ExecContext(ctx, stmt); err != nil {
+		if _, err := pool.Exec(ctx, stmt); err != nil {
 			return fmt.Errorf("timescale init: %w", err)
 		}
 	}

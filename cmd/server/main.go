@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
@@ -43,18 +42,18 @@ func run() error {
 	defer cancel()
 
 	// Connect to TimescaleDB
-	pgDB, err := sql.Open("postgres", cfg.Timescale.DSN())
+	pgPool, err := pgxpool.New(ctx, cfg.Timescale.DSN())
 	if err != nil {
 		return fmt.Errorf("open TimescaleDB: %w", err)
 	}
-	defer pgDB.Close()
+	defer pgPool.Close()
 
-	if err := pgDB.PingContext(ctx); err != nil {
+	if err := pgPool.Ping(ctx); err != nil {
 		return fmt.Errorf("ping TimescaleDB: %w", err)
 	}
 	log.Println("connected to TimescaleDB")
 
-	if err := timescale.InitSchema(ctx, pgDB); err != nil {
+	if err := timescale.InitSchema(ctx, pgPool); err != nil {
 		return fmt.Errorf("init TimescaleDB: %w", err)
 	}
 	log.Println("TimescaleDB schema initialized")
@@ -82,7 +81,7 @@ func run() error {
 	log.Println("MongoDB indexes initialized")
 
 	// Build dependency graph
-	gpsRepo := timescale.NewGPSRepo(pgDB)
+	gpsRepo := timescale.NewGPSRepo(pgPool)
 	tripRepo := mongorepo.NewTripRepo(mongoDB)
 	userRepo := mongorepo.NewUserRepo(mongoDB)
 

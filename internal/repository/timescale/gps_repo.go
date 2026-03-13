@@ -2,18 +2,21 @@ package timescale
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"auto-tracking/internal/domain/model"
 )
 
 type GPSRepo struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
-func NewGPSRepo(db *sql.DB) *GPSRepo {
-	return &GPSRepo{db: db}
+func NewGPSRepo(pool *pgxpool.Pool) *GPSRepo {
+	return &GPSRepo{pool: pool}
 }
 
 func (r *GPSRepo) Insert(ctx context.Context, p model.GPSPoint) error {
@@ -38,15 +41,15 @@ func (r *GPSRepo) Insert(ctx context.Context, p model.GPSPoint) error {
 							  )
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
-		sql.Named("time", p.Time),
-		sql.Named("trip_id", p.TripID),
-		sql.Named("lat", p.Lat),
-		sql.Named("lon", p.Lon),
-		sql.Named("speed", p.Speed),
-		sql.Named("heading", p.Heading),
-		sql.Named("satellites", p.Satellites),
-	)
+	_, err := r.pool.Exec(ctx, query, pgx.NamedArgs{
+		"time":       p.Time,
+		"trip_id":    p.TripID,
+		"lat":        p.Lat,
+		"lon":        p.Lon,
+		"speed":      p.Speed,
+		"heading":    p.Heading,
+		"satellites": p.Satellites,
+	})
 	if err != nil {
 		return fmt.Errorf("gps_repo insert: %w", err)
 	}
@@ -65,10 +68,10 @@ func (r *GPSRepo) FindByTripID(ctx context.Context, tripID string) ([]model.GPSP
 			, heading
 			, satellites
 		from gps_points
-		where trip_id = $1
+		where trip_id = @trip_id
 		order by time asc`
 
-	rows, err := r.db.QueryContext(ctx, query, tripID)
+	rows, err := r.pool.Query(ctx, query, pgx.NamedArgs{"trip_id": tripID})
 	if err != nil {
 		return nil, fmt.Errorf("gps_repo find by trip: %w", err)
 	}
@@ -98,15 +101,15 @@ func (r *GPSRepo) LastByTripID(ctx context.Context, tripID string) (*model.GPSPo
 			, heading
 			, satellites
 		from gps_points
-		where trip_id = $1
+		where trip_id = @trip_id
 		order by time desc
 		limit 1`
 
 	var p model.GPSPoint
-	err := r.db.QueryRowContext(ctx, query, tripID).Scan(
+	err := r.pool.QueryRow(ctx, query, pgx.NamedArgs{"trip_id": tripID}).Scan(
 		&p.Time, &p.TripID, &p.Lat, &p.Lon, &p.Speed, &p.Heading, &p.Satellites,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
