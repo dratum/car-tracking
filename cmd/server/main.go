@@ -16,7 +16,9 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"auto-tracking/internal/api"
+	"auto-tracking/internal/api/handler"
 	"auto-tracking/internal/config"
+	"auto-tracking/internal/domain/service"
 	mongorepo "auto-tracking/internal/repository/mongo"
 	"auto-tracking/internal/repository/timescale"
 )
@@ -75,8 +77,18 @@ func run() error {
 	}
 	log.Println("MongoDB indexes initialized")
 
+	// Build dependency graph
+	gpsRepo := timescale.NewGPSRepo(pgDB)
+	tripRepo := mongorepo.NewTripRepo(mongoDB)
+
+	trackingService := service.NewTrackingService(gpsRepo, tripRepo)
+	tripService := service.NewTripService(tripRepo, gpsRepo)
+
+	const defaultVehicleID = "default"
+	deviceHandler := handler.NewDeviceHandler(trackingService, tripService, defaultVehicleID)
+
 	// HTTP server
-	router := api.NewRouter()
+	router := api.NewRouter(deviceHandler, cfg.Auth.APIKey)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
