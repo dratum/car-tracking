@@ -22,7 +22,7 @@ func NewGPSRepo(pool *pgxpool.Pool) *GPSRepo {
 func (r *GPSRepo) Insert(ctx context.Context, p model.GPSPoint) error {
 	const query = `
 		insert into gps_points (
-								time
+							    time
 							  , trip_id
 							  , lat
 							  , lon
@@ -31,7 +31,7 @@ func (r *GPSRepo) Insert(ctx context.Context, p model.GPSPoint) error {
 							  , satellites
 							  )
 						values (
-								@time
+							    @time
 							  , @trip_id
 							  , @lat
 							  , @lon
