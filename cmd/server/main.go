@@ -155,6 +155,7 @@ func run() error {
 	}
 
 	log.Println("server stopped gracefully")
+
 	return nil
 }
 
@@ -185,5 +186,6 @@ func seedAdminUser(ctx context.Context, userRepo *mongorepo.UserRepo, admin conf
 	}
 
 	log.Printf("admin user %q created", admin.Username)
+
 	return nil
 }
