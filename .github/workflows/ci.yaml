@@ -50,7 +50,7 @@ jobs:
           args: --timeout=30m --config=./.golangci.pipeline.yaml
 
   #         # Optional: show only new issues if it's a pull request. The default value is `false`.
-          only-new-issues: true
+  #         # only-new-issues: true
 
   #         # Optional: if set to true, then all caching functionality will be completely disabled,
   #         #           takes precedence over all other caching options.
