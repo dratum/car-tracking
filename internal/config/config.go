@@ -21,7 +21,7 @@ type ServerConfig struct {
 	Port int    `env:"SERVER_PORT" envDefault:"8080"`
 }
 
-type TimescaleConfig struct {
+type timescaleConfig struct {
 	Host     string `env:"TIMESCALE_HOST" envDefault:"localhost"`
 	Port     int    `env:"TIMESCALE_PORT" envDefault:"5432"`
 	User     string `env:"TIMESCALE_USER" envDefault:"autotrack"`
