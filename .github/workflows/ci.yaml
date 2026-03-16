@@ -38,4 +38,4 @@ jobs:
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: golangci-lint
-        run: golangci-lint run --timeout=30m --config=./.golangci.pipeline.yaml
+        run: golangci-lint run --timeout=1m --config=./.golangci.yaml

@@ -1,0 +1,41 @@
+version: "2"
+run:
+  tests: true
+linters:
+  default: none
+  enable:
+    - errcheck
+    - goconst
+    - gosec
+    - govet
+    - ineffassign
+    - revive
+    - unused
+  settings:
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+  exclusions:
+    generated: lax
+    rules:
+      - path: (.+)\.go$
+        text: G104
+      - path: (.+)\.go$
+        text: exported func .* returns unexported type .*, which can be annoying to use
+      - path: (.+)\.go$
+        text: should have a package comment
+      - path: (.+)\.go$
+        text: don't use an underscore in package name
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
