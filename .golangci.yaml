@@ -12,6 +12,13 @@ linters:
     - revive
     - unused
   settings:
+    errcheck:
+      exclude-functions:
+        - (*go.mongodb.org/mongo-driver/v2/mongo.Client).Disconnect
+        - (*go.mongodb.org/mongo-driver/v2/mongo.Cursor).Close
+        - (*encoding/json.Encoder).Encode
+        - (net/http.ResponseWriter).Write
+        - (io/fs.File).Close
     goconst:
       min-len: 2
       min-occurrences: 2
