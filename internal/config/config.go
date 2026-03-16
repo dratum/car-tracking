@@ -42,8 +42,8 @@ type AuthConfig struct {
 }
 
 type AdminConfig struct {
-	Username string `env:"DEFAULT_USERNAME" envDefault:"admin"`
-	Password string `env:"DEFAULT_PASSWORD" envDefault:"admin"`
+	Username string `env:"USERNAME" envDefault:"admin"`
+	Password string `env:"PASSWORD" envDefault:"admin"`
 }
 
 func (c TimescaleConfig) DSN() string {
@@ -60,5 +60,6 @@ func Load() (*Config, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("config: %w", err)
 	}
+
 	return cfg, nil
 }

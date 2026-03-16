@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -11,14 +11,18 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 
 	"auto-tracking/internal/api"
 	"auto-tracking/internal/api/handler"
 	"auto-tracking/internal/config"
+	"auto-tracking/internal/domain/model"
 	"auto-tracking/internal/service"
+
 	mongorepo "auto-tracking/internal/repository/mongo"
 	"auto-tracking/internal/repository/timescale"
 )
@@ -39,18 +43,18 @@ func run() error {
 	defer cancel()
 
 	// Connect to TimescaleDB
-	pgDB, err := sql.Open("postgres", cfg.Timescale.DSN())
+	pgPool, err := pgxpool.New(ctx, cfg.Timescale.DSN())
 	if err != nil {
 		return fmt.Errorf("open TimescaleDB: %w", err)
 	}
-	defer pgDB.Close()
+	defer pgPool.Close()
 
-	if err := pgDB.PingContext(ctx); err != nil {
+	if err := pgPool.Ping(ctx); err != nil {
 		return fmt.Errorf("ping TimescaleDB: %w", err)
 	}
 	log.Println("connected to TimescaleDB")
 
-	if err := timescale.InitSchema(ctx, pgDB); err != nil {
+	if err := timescale.InitSchema(ctx, pgPool); err != nil {
 		return fmt.Errorf("init TimescaleDB: %w", err)
 	}
 	log.Println("TimescaleDB schema initialized")
@@ -78,17 +82,42 @@ func run() error {
 	log.Println("MongoDB indexes initialized")
 
 	// Build dependency graph
-	gpsRepo := timescale.NewGPSRepo(pgDB)
+	gpsRepo := timescale.NewGPSRepo(pgPool)
 	tripRepo := mongorepo.NewTripRepo(mongoDB)
+	userRepo := mongorepo.NewUserRepo(mongoDB)
 
 	trackingService := service.NewTrackingService(gpsRepo, tripRepo)
 	tripService := service.NewTripService(tripRepo, gpsRepo)
+	statsService := service.NewStatsService(tripRepo)
 
-	const defaultVehicleID = "default"
+	const defaultVehicleID = "1"
 	deviceHandler := handler.NewDeviceHandler(trackingService, tripService, defaultVehicleID)
+	authHandler := handler.NewAuthHandler(userRepo, cfg.Auth.JWTSecret, cfg.Auth.JWTExpiry)
+	tripHandler := handler.NewTripHandler(tripService)
+	statsHandler := handler.NewStatsHandler(statsService)
+
+	// Seed default admin user
+	if err := seedAdminUser(ctx, userRepo, cfg.Admin); err != nil {
+		return fmt.Errorf("seed admin: %w", err)
+	}
+
+	// Static files (SPA)
+	var webFS fs.FS
+	if info, err := os.Stat("web/build"); err == nil && info.IsDir() {
+		webFS = os.DirFS("web/build")
+		log.Println("serving SPA from web/build")
+	}
 
 	// HTTP server
-	router := api.NewRouter(deviceHandler, cfg.Auth.APIKey)
+	router := api.NewRouter(
+		deviceHandler,
+		authHandler,
+		tripHandler,
+		statsHandler,
+		cfg.Auth.APIKey,
+		cfg.Auth.JWTSecret,
+		webFS,
+	)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
@@ -126,5 +155,37 @@ func run() error {
 	}
 
 	log.Println("server stopped gracefully")
+
+	return nil
+}
+
+func seedAdminUser(ctx context.Context, userRepo *mongorepo.UserRepo, admin config.AdminConfig) error {
+	existing, err := userRepo.GetByUsername(ctx, admin.Username)
+	if err != nil {
+		return fmt.Errorf("check admin user: %w", err)
+	}
+	if existing != nil {
+		log.Printf("admin user %q already exists, skipping seed", admin.Username)
+		return nil
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(admin.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash admin password: %w", err)
+	}
+
+	user := model.User{
+		ID:           uuid.New().String(),
+		Username:     admin.Username,
+		PasswordHash: string(hash),
+		CreatedAt:    time.Now().UTC(),
+	}
+
+	if err := userRepo.Create(ctx, user); err != nil {
+		return fmt.Errorf("create admin user: %w", err)
+	}
+
+	log.Printf("admin user %q created", admin.Username)
+
 	return nil
 }
