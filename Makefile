@@ -19,7 +19,7 @@ ps:                ## Статус контейнеров
 ## Docker
 
 docker-build:      ## Собрать Docker-образ приложения
-	DOCKER_BUILDKIT=0 docker build -t autotrack-app:latest -f Dockerfile .
+	DOCKER_BUILDKIT=0 docker build -t autotrack-app:0.0.1 -f Dockerfile .
 
 ## Локальный запуск сервера
 
@@ -32,13 +32,13 @@ build:             ## Собрать бинарник
 ## Frontend
 
 web-install:       ## Установить зависимости фронтенда
-	cd web && npm install
+	cd web && pnpm install
 
 web-dev:           ## Запустить фронтенд dev-сервер
-	cd web && npm run dev
+	cd web && pnpm dev
 
 web-build:         ## Собрать фронтенд для продакшена
-	cd web && npm run build
+	cd web && pnpm build
 
 help:              ## Показать справку
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'

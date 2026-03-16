@@ -9,7 +9,7 @@
 
 # Frontend
 !web/package.json
-!web/package-lock.json
+!web/pnpm-lock.yaml
 !web/src/
 !web/static/
 !web/svelte.config.js
