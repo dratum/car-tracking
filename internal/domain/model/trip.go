@@ -9,6 +9,12 @@ const (
 	TripStatusCompleted TripStatus = "completed"
 )
 
+type TripStats struct {
+	TotalDistanceKM float64 `bson:"total_distance_km"`
+	TotalTrips      int64   `bson:"total_trips"`
+	TotalDurationMs int64   `bson:"total_duration_ms"`
+}
+
 type Trip struct {
 	ID         string     `json:"id"          bson:"_id,omitempty"`
 	VehicleID  string     `json:"vehicle_id"  bson:"vehicle_id"`

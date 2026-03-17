@@ -4,15 +4,13 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	mongorepo "auto-tracking/internal/repository/mongo"
 )
 
 type StatsService struct {
-	tripRepo *mongorepo.TripRepo
+	tripRepo tripRepository
 }
 
-func NewStatsService(tripRepo *mongorepo.TripRepo) *StatsService {
+func NewStatsService(tripRepo tripRepository) *StatsService {
 	return &StatsService{tripRepo: tripRepo}
 }
 

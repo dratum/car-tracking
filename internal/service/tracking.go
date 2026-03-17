@@ -6,16 +6,14 @@ import (
 
 	"auto-tracking/internal/domain/geo"
 	"auto-tracking/internal/domain/model"
-	mongorepo "auto-tracking/internal/repository/mongo"
-	"auto-tracking/internal/repository/timescale"
 )
 
 type TrackingService struct {
-	gpsRepo  *timescale.GPSRepo
-	tripRepo *mongorepo.TripRepo
+	gpsRepo  gpsRepository
+	tripRepo tripRepository
 }
 
-func NewTrackingService(gpsRepo *timescale.GPSRepo, tripRepo *mongorepo.TripRepo) *TrackingService {
+func NewTrackingService(gpsRepo gpsRepository, tripRepo tripRepository) *TrackingService {
 	return &TrackingService{
 		gpsRepo:  gpsRepo,
 		tripRepo: tripRepo,

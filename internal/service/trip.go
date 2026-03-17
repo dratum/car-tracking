@@ -8,16 +8,14 @@ import (
 	"github.com/google/uuid"
 
 	"auto-tracking/internal/domain/model"
-	mongorepo "auto-tracking/internal/repository/mongo"
-	"auto-tracking/internal/repository/timescale"
 )
 
 type TripService struct {
-	tripRepo *mongorepo.TripRepo
-	gpsRepo  *timescale.GPSRepo
+	gpsRepo  gpsRepository
+	tripRepo tripRepository
 }
 
-func NewTripService(tripRepo *mongorepo.TripRepo, gpsRepo *timescale.GPSRepo) *TripService {
+func NewTripService(tripRepo tripRepository, gpsRepo gpsRepository) *TripService {
 	return &TripService{
 		tripRepo: tripRepo,
 		gpsRepo:  gpsRepo,

@@ -180,13 +180,7 @@ func (r *TripRepo) Count(ctx context.Context, vehicleID string, from, to *time.T
 	return count, nil
 }
 
-type TripStats struct {
-	TotalDistanceKM float64 `bson:"total_distance_km"`
-	TotalTrips      int64   `bson:"total_trips"`
-	TotalDurationMs int64   `bson:"total_duration_ms"`
-}
-
-func (r *TripRepo) AggregateStats(ctx context.Context, from, to time.Time) (*TripStats, error) {
+func (r *TripRepo) AggregateStats(ctx context.Context, from, to time.Time) (*model.TripStats, error) {
 	pipeline := bson.A{
 		bson.M{"$match": bson.M{
 			"status":     model.TripStatusCompleted,
@@ -209,13 +203,13 @@ func (r *TripRepo) AggregateStats(ctx context.Context, from, to time.Time) (*Tri
 	}
 	defer cursor.Close(ctx)
 
-	var results []TripStats
+	var results []model.TripStats
 	if err := cursor.All(ctx, &results); err != nil {
 		return nil, fmt.Errorf("trip_repo aggregate stats decode: %w", err)
 	}
 
 	if len(results) == 0 {
-		return &TripStats{}, nil
+		return &model.TripStats{}, nil
 	}
 
 	return &results[0], nil
