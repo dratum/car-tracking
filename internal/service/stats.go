@@ -4,13 +4,19 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"auto-tracking/internal/domain/model"
 )
 
-type StatsService struct {
-	tripRepo tripRepository
+type statsTripRepo interface {
+	AggregateStats(ctx context.Context, from, to time.Time) (*model.TripStats, error)
 }
 
-func NewStatsService(tripRepo tripRepository) *StatsService {
+type StatsService struct {
+	tripRepo statsTripRepo
+}
+
+func NewStatsService(tripRepo statsTripRepo) *StatsService {
 	return &StatsService{tripRepo: tripRepo}
 }
 

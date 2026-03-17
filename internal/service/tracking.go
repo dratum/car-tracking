@@ -8,12 +8,21 @@ import (
 	"auto-tracking/internal/domain/model"
 )
 
-type TrackingService struct {
-	gpsRepo  gpsRepository
-	tripRepo tripRepository
+type trackingGPSRepo interface {
+	Insert(ctx context.Context, p model.GPSPoint) error
+	LastByTripID(ctx context.Context, tripID string) (*model.GPSPoint, error)
 }
 
-func NewTrackingService(gpsRepo gpsRepository, tripRepo tripRepository) *TrackingService {
+type trackingTripRepo interface {
+	UpdateStats(ctx context.Context, tripID string, distKM, speed float64) error
+}
+
+type TrackingService struct {
+	gpsRepo  trackingGPSRepo
+	tripRepo trackingTripRepo
+}
+
+func NewTrackingService(gpsRepo trackingGPSRepo, tripRepo trackingTripRepo) *TrackingService {
 	return &TrackingService{
 		gpsRepo:  gpsRepo,
 		tripRepo: tripRepo,

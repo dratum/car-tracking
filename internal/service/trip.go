@@ -10,12 +10,26 @@ import (
 	"auto-tracking/internal/domain/model"
 )
 
-type TripService struct {
-	gpsRepo  gpsRepository
-	tripRepo tripRepository
+type tripGPSRepo interface {
+	FindByTripID(ctx context.Context, tripID string) ([]model.GPSPoint, error)
 }
 
-func NewTripService(tripRepo tripRepository, gpsRepo gpsRepository) *TripService {
+type tripTripRepo interface {
+	Create(ctx context.Context, trip model.Trip) (string, error)
+	GetByID(ctx context.Context, id string) (*model.Trip, error)
+	GetActiveByVehicleID(ctx context.Context, vehicleID string) (*model.Trip, error)
+	EndTrip(ctx context.Context, tripID string, endTime time.Time) error
+	SetAvgSpeed(ctx context.Context, tripID string, avgSpeed float64) error
+	List(ctx context.Context, vehicleID string, from, to *time.Time, limit, offset int64) ([]model.Trip, error)
+	Count(ctx context.Context, vehicleID string, from, to *time.Time) (int64, error)
+}
+
+type TripService struct {
+	gpsRepo  tripGPSRepo
+	tripRepo tripTripRepo
+}
+
+func NewTripService(tripRepo tripTripRepo, gpsRepo tripGPSRepo) *TripService {
 	return &TripService{
 		tripRepo: tripRepo,
 		gpsRepo:  gpsRepo,
