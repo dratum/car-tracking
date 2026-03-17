@@ -1,4 +1,4 @@
-# Auto-Tracking
+# Car-Tracking
 
 GPS-трекинг сервис для автомобиля. Принимает координаты с ESP32 + NEO-6M, хранит треки поездок, отображает маршруты на карте и считает статистику пробега.
 
@@ -31,8 +31,8 @@ GPS-трекинг сервис для автомобиля. Принимает 
 
 ```bash
 # 1. Clone & configure
-git clone https://github.com/dratum/auto-tracking.git
-cd auto-tracking
+git clone https://github.com/dratum/car-tracking.git
+cd car-tracking
 cp .env.example .env
 
 # 2. Start databases
