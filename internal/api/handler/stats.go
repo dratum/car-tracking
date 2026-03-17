@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"auto-tracking/internal/service"
+	"car-tracking/internal/service"
 )
 
 type statsService interface {

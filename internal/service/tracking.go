@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"auto-tracking/internal/domain/geo"
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/geo"
+	"car-tracking/internal/domain/model"
 )
 
 type trackingGPSRepo interface {

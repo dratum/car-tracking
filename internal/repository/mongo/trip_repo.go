@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/model"
 )
 
 type TripRepo struct {

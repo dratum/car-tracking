@@ -17,14 +17,14 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
-	"auto-tracking/internal/api"
-	"auto-tracking/internal/api/handler"
-	"auto-tracking/internal/config"
-	"auto-tracking/internal/domain/model"
-	"auto-tracking/internal/service"
+	"car-tracking/internal/api"
+	"car-tracking/internal/api/handler"
+	"car-tracking/internal/config"
+	"car-tracking/internal/domain/model"
+	"car-tracking/internal/service"
 
-	mongorepo "auto-tracking/internal/repository/mongo"
-	"auto-tracking/internal/repository/timescale"
+	mongorepo "car-tracking/internal/repository/mongo"
+	"car-tracking/internal/repository/timescale"
 )
 
 func main() {

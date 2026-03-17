@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/model"
 )
 
 type UserRepo struct {

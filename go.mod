@@ -1,4 +1,4 @@
-module auto-tracking
+module car-tracking
 
 go 1.25.1
 

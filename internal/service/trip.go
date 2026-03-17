@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/model"
 )
 
 type tripGPSRepo interface {

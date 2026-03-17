@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/model"
 )
 
 type statsTripRepo interface {

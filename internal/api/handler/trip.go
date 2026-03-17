@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/domain/model"
 )
 
 type tripQueryService interface {

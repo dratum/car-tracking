@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"auto-tracking/internal/api/middleware"
-	"auto-tracking/internal/domain/model"
+	"car-tracking/internal/api/middleware"
+	"car-tracking/internal/domain/model"
 )
 
 type userRepo interface {

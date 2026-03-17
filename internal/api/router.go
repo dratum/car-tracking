@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"auto-tracking/internal/api/handler"
-	apimw "auto-tracking/internal/api/middleware"
+	"car-tracking/internal/api/handler"
+	apimw "car-tracking/internal/api/middleware"
 )
 
 func NewRouter(
