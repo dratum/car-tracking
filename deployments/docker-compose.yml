@@ -39,7 +39,7 @@ services:
       - autotrack
 
   app:
-    image: autotrack-app:latest
+    image: autotrack-app:0.0.1
     container_name: autotrack-app
     env_file:
       - ../.env

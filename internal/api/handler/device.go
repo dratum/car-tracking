@@ -61,7 +61,8 @@ func (h *DeviceHandler) PostLocation(w http.ResponseWriter, r *http.Request) {
 	if req.Timestamp != "" {
 		parsed, err := time.Parse(time.RFC3339, req.Timestamp)
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid timestamp format, expected RFC3339"})
+			writeJSON(w, http.StatusBadRequest,
+				map[string]string{"error": "invalid timestamp format, expected RFC3339"})
 			return
 		}
 		ts = parsed

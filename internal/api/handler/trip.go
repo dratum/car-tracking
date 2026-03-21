@@ -33,13 +33,14 @@ type tripListResponse struct {
 }
 
 type tripResponse struct {
-	ID          string     `json:"id"`
-	StartTime   time.Time  `json:"start_time"`
-	EndTime     *time.Time `json:"end_time,omitempty"`
-	DistanceKM  float64    `json:"distance_km"`
-	DurationMin float64    `json:"duration_min"`
-	MaxSpeed    float64    `json:"max_speed"`
-	AvgSpeed    float64    `json:"avg_speed"`
+	ID          string           `json:"id"`
+	StartTime   time.Time        `json:"start_time"`
+	EndTime     *time.Time       `json:"end_time,omitempty"`
+	DistanceKM  float64          `json:"distance_km"`
+	DurationMin float64          `json:"duration_min"`
+	MaxSpeed    float64          `json:"max_speed"`
+	AvgSpeed    float64          `json:"avg_speed"`
+	Status      model.TripStatus `json:"status"`
 }
 
 type pointsResponse struct {
@@ -67,6 +68,7 @@ func tripToResponse(t model.Trip) tripResponse {
 		DurationMin: durationMin,
 		MaxSpeed:    t.MaxSpeed,
 		AvgSpeed:    t.AvgSpeed,
+		Status:      t.Status,
 	}
 }
 
