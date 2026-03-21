@@ -1,0 +1,18 @@
+#pragma once
+
+// WiFi
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+// API
+const char* API_HOST   = "192.168.1.100"; // IP твоего сервера в локальной сети
+const int   API_PORT   = 8080;
+const char* API_KEY    = "my-device-api-key";
+
+// GPS (будет использоваться после подключения NEO-6M)
+const int GPS_RX_PIN = 16;
+const int GPS_TX_PIN = 17;
+const int GPS_BAUD   = 9600;
+
+// Интервал отправки координат (мс)
+const int SEND_INTERVAL_MS = 1000;

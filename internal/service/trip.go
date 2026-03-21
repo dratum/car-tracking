@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ type tripTripRepo interface {
 	Create(ctx context.Context, trip model.Trip) (string, error)
 	GetByID(ctx context.Context, id string) (*model.Trip, error)
 	GetActiveByVehicleID(ctx context.Context, vehicleID string) (*model.Trip, error)
+	GetStaleTrips(ctx context.Context, olderThan time.Time) ([]model.Trip, error)
 	EndTrip(ctx context.Context, tripID string, endTime time.Time) error
 	SetAvgSpeed(ctx context.Context, tripID string, avgSpeed float64) error
 	List(ctx context.Context, vehicleID string, from, to *time.Time, limit, offset int64) ([]model.Trip, error)
@@ -36,14 +38,17 @@ func NewTripService(tripRepo tripTripRepo, gpsRepo tripGPSRepo) *TripService {
 	}
 }
 
-// StartTrip creates a new active trip and returns its UUID.
+// StartTrip closes any active trip for the vehicle and creates a new one.
 func (s *TripService) StartTrip(ctx context.Context, vehicleID string) (string, error) {
 	existing, err := s.tripRepo.GetActiveByVehicleID(ctx, vehicleID)
 	if err != nil {
 		return "", fmt.Errorf("trip service start: check active: %w", err)
 	}
 	if existing != nil {
-		return "", fmt.Errorf("trip service start: vehicle %s already has active trip %s", vehicleID, existing.ID)
+		log.Printf("auto-closing stale trip %s for vehicle %s", existing.ID, vehicleID)
+		if err := s.finishTrip(ctx, existing.ID); err != nil {
+			return "", fmt.Errorf("trip service start: auto-close: %w", err)
+		}
 	}
 
 	tripID := uuid.New().String()
@@ -75,16 +80,19 @@ func (s *TripService) EndTrip(ctx context.Context, vehicleID string) error {
 		return fmt.Errorf("trip service end: no active trip for vehicle %s", vehicleID)
 	}
 
+	return s.finishTrip(ctx, trip.ID)
+}
+
+func (s *TripService) finishTrip(ctx context.Context, tripID string) error {
 	now := time.Now().UTC()
 
-	if err := s.tripRepo.EndTrip(ctx, trip.ID, now); err != nil {
-		return fmt.Errorf("trip service end: %w", err)
+	if err := s.tripRepo.EndTrip(ctx, tripID, now); err != nil {
+		return fmt.Errorf("finish trip: %w", err)
 	}
 
-	// Compute average speed from all GPS points.
-	points, err := s.gpsRepo.FindByTripID(ctx, trip.ID)
+	points, err := s.gpsRepo.FindByTripID(ctx, tripID)
 	if err != nil {
-		return fmt.Errorf("trip service end: get points: %w", err)
+		return fmt.Errorf("finish trip: get points: %w", err)
 	}
 
 	if len(points) > 0 {
@@ -94,8 +102,8 @@ func (s *TripService) EndTrip(ctx context.Context, vehicleID string) error {
 		}
 		avgSpeed := totalSpeed / float64(len(points))
 
-		if err := s.tripRepo.SetAvgSpeed(ctx, trip.ID, avgSpeed); err != nil {
-			return fmt.Errorf("trip service end: set avg speed: %w", err)
+		if err := s.tripRepo.SetAvgSpeed(ctx, tripID, avgSpeed); err != nil {
+			return fmt.Errorf("finish trip: set avg speed: %w", err)
 		}
 	}
 
@@ -135,4 +143,41 @@ func (s *TripService) GetTripPoints(ctx context.Context, tripID string) ([]model
 	}
 
 	return points, nil
+}
+
+// CloseStaleTrips finds active trips with no activity and closes them.
+func (s *TripService) CloseStaleTrips(ctx context.Context, timeout time.Duration) {
+	threshold := time.Now().UTC().Add(-timeout)
+
+	stale, err := s.tripRepo.GetStaleTrips(ctx, threshold)
+	if err != nil {
+		log.Printf("stale trips check: %v", err)
+		return
+	}
+
+	for _, trip := range stale {
+		log.Printf("auto-closing stale trip %s (started %s)", trip.ID, trip.StartTime.Format(time.RFC3339))
+
+		if err := s.finishTrip(ctx, trip.ID); err != nil {
+			log.Printf("auto-close trip %s failed: %v", trip.ID, err)
+		}
+	}
+}
+
+// RunStaleTripsWorker periodically closes stale trips.
+func (s *TripService) RunStaleTripsWorker(ctx context.Context, interval, timeout time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	log.Printf("stale trips worker started (check every %s, timeout %s)", interval, timeout)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("stale trips worker stopped")
+			return
+		case <-ticker.C:
+			s.CloseStaleTrips(ctx, timeout)
+		}
+	}
 }

@@ -39,22 +39,25 @@ func run() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
+	initCtx, initCancel := context.WithTimeout(appCtx, 15*time.Second)
+	defer initCancel()
 
 	// Connect to TimescaleDB
-	pgPool, err := pgxpool.New(ctx, cfg.Timescale.DSN())
+	pgPool, err := pgxpool.New(initCtx, cfg.Timescale.DSN())
 	if err != nil {
 		return fmt.Errorf("open TimescaleDB: %w", err)
 	}
 	defer pgPool.Close()
 
-	if err := pgPool.Ping(ctx); err != nil {
+	if err := pgPool.Ping(initCtx); err != nil {
 		return fmt.Errorf("ping TimescaleDB: %w", err)
 	}
 	log.Println("connected to TimescaleDB")
 
-	if err := timescale.InitSchema(ctx, pgPool); err != nil {
+	if err := timescale.InitSchema(initCtx, pgPool); err != nil {
 		return fmt.Errorf("init TimescaleDB: %w", err)
 	}
 	log.Println("TimescaleDB schema initialized")
@@ -70,13 +73,13 @@ func run() error {
 		mongoClient.Disconnect(disconnectCtx)
 	}()
 
-	if err := mongoClient.Ping(ctx, nil); err != nil {
+	if err := mongoClient.Ping(initCtx, nil); err != nil {
 		return fmt.Errorf("ping MongoDB: %w", err)
 	}
 	log.Println("connected to MongoDB")
 
 	mongoDB := mongoClient.Database(cfg.Mongo.DB)
-	if err := mongorepo.InitSchema(ctx, mongoDB); err != nil {
+	if err := mongorepo.InitSchema(initCtx, mongoDB); err != nil {
 		return fmt.Errorf("init mongodb: %w", err)
 	}
 	log.Println("MongoDB indexes initialized")
@@ -97,9 +100,12 @@ func run() error {
 	statsHandler := handler.NewStatsHandler(statsService)
 
 	// Seed default admin user
-	if err := seedAdminUser(ctx, userRepo, cfg.Admin); err != nil {
+	if err := seedAdminUser(initCtx, userRepo, cfg.Admin); err != nil {
 		return fmt.Errorf("seed admin: %w", err)
 	}
+
+	// Stale trips worker
+	go tripService.RunStaleTripsWorker(appCtx, 5*time.Minute, 10*time.Minute)
 
 	// Static files (SPA)
 	var webFS fs.FS

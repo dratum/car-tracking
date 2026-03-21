@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -56,10 +57,14 @@ func (h *DeviceHandler) PostLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ts, err := time.Parse(time.RFC3339, req.Timestamp)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid timestamp format, expected RFC3339"})
-		return
+	ts := time.Now().UTC()
+	if req.Timestamp != "" {
+		parsed, err := time.Parse(time.RFC3339, req.Timestamp)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid timestamp format, expected RFC3339"})
+			return
+		}
+		ts = parsed
 	}
 
 	point := model.GPSPoint{
@@ -73,6 +78,7 @@ func (h *DeviceHandler) PostLocation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.tracking.SavePoint(r.Context(), point); err != nil {
+		log.Printf("save location error: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save location"})
 		return
 	}
@@ -83,15 +89,17 @@ func (h *DeviceHandler) PostLocation(w http.ResponseWriter, r *http.Request) {
 func (h *DeviceHandler) PostTripStart(w http.ResponseWriter, r *http.Request) {
 	tripID, err := h.trip.StartTrip(r.Context(), h.vehicleID)
 	if err != nil {
+		log.Printf("start trip error: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to start trip"})
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{"trip_id": tripID})
+	writeJSON(w, http.StatusOK, map[string]string{"trip_id": tripID})
 }
 
 func (h *DeviceHandler) PostTripEnd(w http.ResponseWriter, r *http.Request) {
 	if err := h.trip.EndTrip(r.Context(), h.vehicleID); err != nil {
+		log.Printf("end trip error: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to end trip"})
 		return
 	}

@@ -31,5 +31,9 @@ Thumbs.db
 # Docker volumes
 data/
 
+# PlatformIO
+firmware/.pio/
+firmware/src/config.h
+
 # CLAUDE
 CLAUDE.md

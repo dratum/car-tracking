@@ -66,6 +66,27 @@ func (r *TripRepo) GetActiveByVehicleID(ctx context.Context, vehicleID string) (
 	return &trip, nil
 }
 
+// GetStaleTrips returns active trips with start_time older than the given threshold.
+func (r *TripRepo) GetStaleTrips(ctx context.Context, olderThan time.Time) ([]model.Trip, error) {
+	filter := bson.M{
+		"status":     model.TripStatusActive,
+		"start_time": bson.M{"$lt": olderThan},
+	}
+
+	cursor, err := r.col.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("trip_repo get stale: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var trips []model.Trip
+	if err := cursor.All(ctx, &trips); err != nil {
+		return nil, fmt.Errorf("trip_repo get stale decode: %w", err)
+	}
+
+	return trips, nil
+}
+
 func (r *TripRepo) EndTrip(ctx context.Context, tripID string, endTime time.Time) error {
 	filter := bson.M{"_id": tripID}
 	update := bson.M{
